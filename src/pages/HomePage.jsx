@@ -94,20 +94,23 @@ export default function HomePage() {
 
   useEffect(() => {
     let cancelled = false
-    getShowCatalog()
-      .then((shows) => {
+
+    async function loadPopular() {
+      try {
+        const shows = await getShowCatalog()
         if (cancelled) return
         const sorted = [...shows].sort(
           (a, b) => (b.rating?.average || 0) - (a.rating?.average || 0),
         )
         setPopular(sorted.slice(0, 10))
-      })
-      .catch(() => {
+      } catch {
         if (!cancelled) setPopular([])
-      })
-      .finally(() => {
+      } finally {
         if (!cancelled) setLoadingPopular(false)
-      })
+      }
+    }
+
+    loadPopular()
 
     return () => {
       cancelled = true

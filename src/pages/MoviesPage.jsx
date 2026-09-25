@@ -18,22 +18,24 @@ export default function MoviesPage() {
 
   useEffect(() => {
     const controller = new AbortController()
-    const pending = debouncedTerm
-      ? searchShows(debouncedTerm, controller.signal)
-      : getShowCatalog(controller.signal)
 
-    pending
-      .then((list) => {
+    async function loadShows() {
+      try {
+        const list = debouncedTerm
+          ? await searchShows(debouncedTerm, controller.signal)
+          : await getShowCatalog(controller.signal)
         setShows(list)
         setState('ready')
-      })
-      .catch((error) => {
+      } catch (error) {
         if (error.name === 'AbortError') return
         setErrorMessage(
           error.message || 'Something went wrong while loading shows.',
         )
         setState('error')
-      })
+      }
+    }
+
+    loadShows()
 
     return () => controller.abort()
   }, [debouncedTerm])
@@ -45,21 +47,19 @@ export default function MoviesPage() {
 
   const clearSearch = () => beginSearch('')
 
-  const retry = () => {
+  const retry = async () => {
     setErrorMessage('')
     setState('loading')
-    const pending = debouncedTerm
-      ? searchShows(debouncedTerm)
-      : getShowCatalog()
-    pending
-      .then((list) => {
-        setShows(list)
-        setState('ready')
-      })
-      .catch((error) => {
-        setErrorMessage(error.message || 'Please try again.')
-        setState('error')
-      })
+    try {
+      const list = debouncedTerm
+        ? await searchShows(debouncedTerm)
+        : await getShowCatalog()
+      setShows(list)
+      setState('ready')
+    } catch (error) {
+      setErrorMessage(error.message || 'Please try again.')
+      setState('error')
+    }
   }
 
   return (
